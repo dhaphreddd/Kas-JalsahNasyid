@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kas Jalsah & Nasyid</title>
+  <meta name="description" content="Sistem Informasi Kas Jalsah & Nasyid">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            },
+            darkbg: {
+              900: '#0f172a',
+              800: '#1e293b',
+              700: '#334155',
+            }
+          },
+          fontFamily: {
+            sans: ['Outfit', 'Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- jsPDF & AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- SheetJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    /* Premium Blur & Glow effects */
+    .glassmorphism {
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .dark .glassmorphism {
+      background: rgba(30, 41, 59, 0.45);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    body {
+      font-family: 'Outfit', 'Inter', sans-serif;
+    }
+    /* Hide scrollbars but keep functionality */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-darkbg-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-300">
+
+  <!-- Notification Toast Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Splash Screen / Loader -->
+  <div id="app-loader" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center text-white">
+    <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-brand-500 mb-4"></div>
+    <h1 class="text-xl font-bold tracking-wider">Kas Jalsah & Nasyid</h1>
+    <p class="text-slate-400 text-sm mt-1">Memuat sistem...</p>
+  </div>
+
+  <!-- AUTH PAGE -->
+  <div id="auth-page" class="hidden min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-darkbg-900 dark:to-slate-850">
+    <div class="glassmorphism p-8 rounded-3xl w-full max-w-md shadow-2xl relative overflow-hidden transition-all duration-300">
+      <!-- Glow effect -->
+      <div class="absolute -top-24 -left-24 w-48 h-48 bg-brand-500/20 rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl"></div>
+
+      <div class="text-center mb-8 relative z-10">
+        <div class="mx-auto w-20 h-20 bg-brand-500/10 rounded-2xl flex items-center justify-center mb-4 border border-brand-500/30">
+          <i data-lucide="music" class="w-10 h-10 text-brand-500"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-950 dark:text-white">Kas Jalsah & Nasyid</h2>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Silakan masuk untuk mengelola keuangan</p>
+      </div>
+
+      <form id="login-form" class="space-y-5 relative z-10">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Email</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <i data-lucide="mail" class="w-5 h-5"></i>
+            </span>
+            <input type="email" id="login-email" required class="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-darkbg-800/50 border border-slate-200 dark:border-slate-700/50 rounded-2xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-slate-900 dark:text-white transition-all" placeholder="nama@email.com">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Kata Sandi</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <i data-lucide="lock" class="w-5 h-5"></i>
+            </span>
+            <input type="password" id="login-password" required class="w-full pl-10 pr-10 py-3 bg-white/50 dark:bg-darkbg-800/50 border border-slate-200 dark:border-slate-700/50 rounded-2xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-slate-900 dark:text-white transition-all" placeholder="••••••••">
+            <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+              <i data-lucide="eye" class="w-5 h-5" id="password-eye-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-3.5 px-4 rounded-2xl transition duration-300 flex items-center justify-center gap-2 shadow-lg shadow-brand-600/20 active:scale-[0.98]">
+          <span>Masuk</span>
+          <i data-lucide="arrow-right" class="w-5 h-5"></i>
+        </button>
+      </form>
+
+      <div class="mt-8 text-center text-xs text-slate-400 dark:text-slate-500 border-t border-slate-200/50 dark:border-slate-700/50 pt-5">
+        Aplikasi Kas Jalsah & Nasyid v1.0.0
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP WRAPPER -->
+  <div id="main-app" class="hidden min-h-screen flex flex-col md:flex-row">
+    
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="hidden md:flex flex-col w-72 bg-white dark:bg-darkbg-800 border-r border-slate-200 dark:border-slate-800 transition-all duration-300">
+      <div class="p-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
+        <img src="./assets/icon.svg" class="w-10 h-10 rounded-xl object-contain" alt="Logo">
+        <div>
+          <h2 class="font-bold text-slate-900 dark:text-white tracking-wide">Kas Jalsah</h2>
+          <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">Management System</span>
+        </div>
+      </div>
+
+      <!-- Navigation links -->
+      <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto no-scrollbar">
+        <button data-target="dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition duration-200 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-darkbg-700/50 font-medium">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          <span>Dashboard</span>
+        </button>
+
+        <button data-target="transactions" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition duration-200 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-darkbg-700/50 font-medium">
+          <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+          <span>Transaksi</span>
+        </button>
+
+        <button data-target="reports" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition duration-200 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-darkbg-700/50 font-medium">
+          <i data-lucide="trending-up" class="w-5 h-5"></i>
+          <span>Laporan</span>
+        </button>
+
+        <!-- Admin Only -->
+        <button id="nav-users-desktop" data-target="users" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition duration-200 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-darkbg-700/50 font-medium hidden">
+          <i data-lucide="users" class="w-5 h-5"></i>
+          <span>Pengguna</span>
+        </button>
+      </nav>
+
+      <!-- User footer inside sidebar -->
+      <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-darkbg-900/10">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-brand-500 text-white font-bold flex items-center justify-center" id="user-avatar-desktop">U</div>
+          <div class="flex-1 overflow-hidden">
+            <h4 class="font-semibold text-sm text-slate-900 dark:text-white truncate" id="user-name-desktop">User</h4>
+            <span class="text-[10px] bg-brand-500/10 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider" id="user-role-desktop">Kolektor</span>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <!-- Dark mode toggle -->
+          <button id="theme-toggle-desktop" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-darkbg-700 dark:hover:bg-darkbg-600 rounded-xl transition flex items-center justify-center text-slate-600 dark:text-slate-300">
+            <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+            <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
+          </button>
+          <!-- Log out button -->
+          <button id="logout-btn-desktop" class="flex-1 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl transition flex items-center justify-center">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MOBILE TOP BAR -->
+    <header class="md:hidden flex items-center justify-between px-6 py-4 bg-white dark:bg-darkbg-800 border-b border-slate-200 dark:border-slate-800 z-10 sticky top-0 transition-colors">
+      <div class="flex items-center gap-2">
+        <img src="./assets/icon.svg" class="w-8 h-8 rounded-lg object-contain" alt="Logo">
+        <h1 class="font-bold text-slate-900 dark:text-white tracking-wide">Kas Jalsah</h1>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Theme Toggle -->
+        <button id="theme-toggle-mobile" class="w-9 h-9 bg-slate-100 dark:bg-darkbg-700 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300">
+          <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+          <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
+        </button>
+        <!-- Log out -->
+        <button id="logout-btn-mobile" class="w-9 h-9 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-xl flex items-center justify-center">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENT WRAPPER -->
+    <main class="flex-1 p-4 md:p-8 overflow-y-auto pb-24 md:pb-8 max-w-7xl mx-auto w-full">
+      
+      <!-- DASHBOARD VIEW -->
+      <section id="view-dashboard" class="view-panel space-y-6">
+        <!-- Welcoming -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Dashboard Kas</h2>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Ringkasan kondisi finansial Jalsah & Nasyid saat ini.</p>
+          </div>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <!-- Total Kas -->
+          <div class="glassmorphism p-6 rounded-3xl shadow-xl relative overflow-hidden group">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl group-hover:bg-brand-500/20 transition-all duration-300"></div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Saldo Kas</span>
+              <div class="w-10 h-10 bg-brand-500/10 rounded-xl flex items-center justify-center border border-brand-500/20">
+                <i data-lucide="wallet" class="w-5 h-5 text-brand-500"></i>
+              </div>
+            </div>
+            <h3 class="text-3xl font-extrabold text-slate-900 dark:text-white" id="db-total-kas">Rp 0</h3>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">Akumulasi seluruh pemasukan & pengeluaran</p>
+          </div>
+
+          <!-- Total Pemasukan -->
+          <div class="glassmorphism p-6 rounded-3xl shadow-xl relative overflow-hidden group">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-300"></div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Pemasukan</span>
+              <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
+                <i data-lucide="trending-up" class="w-5 h-5 text-emerald-500"></i>
+              </div>
+            </div>
+            <h3 class="text-3xl font-extrabold text-slate-900 dark:text-white" id="db-total-masuk">Rp 0</h3>
+            <p class="text-xs text-emerald-500 dark:text-emerald-400 mt-2 flex items-center gap-1 font-medium">
+              <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i> Seluruh kas masuk
+            </p>
+          </div>
+
+          <!-- Total Pengeluaran -->
+          <div class="glassmorphism p-6 rounded-3xl shadow-xl relative overflow-hidden group">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl group-hover:bg-rose-500/20 transition-all duration-300"></div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Pengeluaran</span>
+              <div class="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center border border-rose-500/20">
+                <i data-lucide="trending-down" class="w-5 h-5 text-rose-500"></i>
+              </div>
+            </div>
+            <h3 class="text-3xl font-extrabold text-slate-900 dark:text-white" id="db-total-keluar">Rp 0</h3>
+            <p class="text-xs text-rose-500 dark:text-rose-400 mt-2 flex items-center gap-1 font-medium">
+              <i data-lucide="arrow-down-left" class="w-3.5 h-3.5"></i> Seluruh kas keluar
+            </p>
+          </div>
+        </div>
+
+        <!-- Dashboard Charts & Activities -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Chart Card -->
+          <div class="glassmorphism p-6 rounded-3xl shadow-xl lg:col-span-2 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Aliran Finansial</h3>
+                <p class="text-xs text-slate-400">Perbandingan pemasukan vs pengeluaran bulanan</p>
+              </div>
+            </div>
+            <div class="relative w-full h-[280px]">
+              <canvas id="dashboard-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Recent Transactions Card -->
+          <div class="glassmorphism p-6 rounded-3xl shadow-xl flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white">Aktivitas Terakhir</h3>
+              <button onclick="switchTab('transactions')" class="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline">Semua</button>
+            </div>
+
+            <!-- List inside -->
+            <div class="space-y-4 overflow-y-auto max-h-[280px] pr-1.5" id="dashboard-recent-list">
+              <div class="text-center text-xs text-slate-400 py-10">Memuat transaksi terbaru...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TRANSACTIONS VIEW -->
+      <section id="view-transactions" class="view-panel space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Daftar Transaksi</h2>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Kelola data pemasukan dan pengeluaran kas.</p>
+          </div>
+          <!-- Action Buttons -->
+          <div class="flex gap-2">
+            <button id="add-transaction-btn" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold py-2.5 px-4 rounded-xl transition flex items-center gap-2 text-sm shadow-md active:scale-95 hidden">
+              <i data-lucide="plus-circle" class="w-5 h-5"></i>
+              <span>Tambah Transaksi</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="glassmorphism p-4 rounded-2xl flex flex-col md:flex-row gap-4 items-center justify-between shadow-lg">
+          <div class="w-full md:w-auto flex flex-wrap gap-2">
+            <!-- Filter Type -->
+            <select id="filter-type" class="bg-white/50 dark:bg-darkbg-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-3 py-2 text-sm outline-none text-slate-800 dark:text-white">
+              <option value="all">Semua Tipe</option>
+              <option value="pemasukan">Pemasukan</option>
+              <option value="pengeluaran">Pengeluaran</option>
+            </select>
+            <!-- Filter Category -->
+            <select id="filter-category" class="bg-white/50 dark:bg-darkbg-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-3 py-2 text-sm outline-none text-slate-800 dark:text-white">
+              <option value="all">Semua Kategori</option>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <!-- Search input -->
+          <div class="w-full md:w-80 relative">
+            <input type="text" id="search-desc" class="w-full bg-white/50 dark:bg-darkbg-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl pl-10 pr-4 py-2 text-sm outline-none text-slate-800 dark:text-white placeholder-slate-400" placeholder="Cari deskripsi...">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </span>
+          </div>
+        </div>
+
+        <!-- Transaction Table / Cards (Mobile-Responsive) -->
+        <div class="glassmorphism rounded-3xl overflow-hidden shadow-xl border border-slate-200/50 dark:border-slate-850">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-100/50 dark:bg-darkbg-800/50 text-slate-400 dark:text-slate-300 text-xs font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                  <th class="px-6 py-4">Tanggal</th>
+                  <th class="px-6 py-4">Deskripsi</th>
+                  <th class="px-6 py-4">Kategori</th>
+                  <th class="px-6 py-4">Tipe</th>
+                  <th class="px-6 py-4 text-right">Jumlah</th>
+                  <th class="px-6 py-4 text-center action-col hidden">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="transaction-table-body" class="divide-y divide-slate-200/50 dark:divide-slate-800/50 text-sm">
+                <!-- Content will load dynamically -->
+                <tr>
+                  <td colspan="6" class="px-6 py-12 text-center text-slate-400">Memuat data transaksi...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORTS VIEW -->
+      <section id="view-reports" class="view-panel space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Laporan Keuangan</h2>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Ekspor laporan kas ke PDF dan Excel.</p>
+          </div>
+        </div>
+
+        <!-- Date Filters and Exports Card -->
+        <div class="glassmorphism p-6 rounded-3xl shadow-xl grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Tanggal Mulai</label>
+            <input type="date" id="report-start-date" class="w-full bg-white/50 dark:bg-darkbg-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-sm outline-none text-slate-800 dark:text-white focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Tanggal Selesai</label>
+            <input type="date" id="report-end-date" class="w-full bg-white/50 dark:bg-darkbg-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-sm outline-none text-slate-800 dark:text-white focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div class="flex gap-2 md:col-span-2">
+            <button id="btn-export-pdf" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-md active:scale-95">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+              <span>Unduh PDF</span>
+            </button>
+            <button id="btn-export-excel" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-md active:scale-95">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+              <span>Unduh Excel</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Analysis reports diagrams -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="glassmorphism p-6 rounded-3xl shadow-xl">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white mb-4">Pemasukan per Kategori</h3>
+            <div class="relative w-full h-[250px] flex items-center justify-center">
+              <canvas id="category-in-chart"></canvas>
+            </div>
+          </div>
+          <div class="glassmorphism p-6 rounded-3xl shadow-xl">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white mb-4">Pengeluaran per Kategori</h3>
+            <div class="relative w-full h-[250px] flex items-center justify-center">
+              <canvas id="category-out-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- USERS MANAGEMENT VIEW (Admin Only) -->
+      <section id="view-users" class="view-panel space-y-6 hidden">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Manajemen Pengguna</h2>
+          <p class="text-slate-500 dark:text-slate-400 mt-1">Ubah role dan hak akses pengguna terdaftar.</p>
+        </div>
+
+        <div class="glassmorphism rounded-3xl overflow-hidden shadow-xl border border-slate-200/50 dark:border-slate-850">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-100/50 dark:bg-darkbg-800/50 text-slate-400 dark:text-slate-300 text-xs font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                <th class="px-6 py-4">Nama Pengguna</th>
+                <th class="px-6 py-4">Email</th>
+                <th class="px-6 py-4">Role Akses</th>
+                <th class="px-6 py-4 text-center">Ganti Role</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body" class="divide-y divide-slate-200/50 dark:divide-slate-800/50 text-sm">
+              <tr>
+                <td colspan="4" class="px-6 py-12 text-center text-slate-400">Memuat data pengguna...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-darkbg-800/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 flex justify-around py-3 z-30 transition-colors shadow-2xl">
+      <button data-target="dashboard" class="nav-btn flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 transition">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium">Dashboard</span>
+      </button>
+
+      <button data-target="transactions" class="nav-btn flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 transition">
+        <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium">Transaksi</span>
+      </button>
+
+      <button data-target="reports" class="nav-btn flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 transition">
+        <i data-lucide="trending-up" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium">Laporan</span>
+      </button>
+
+      <!-- Admin Only -->
+      <button id="nav-users-mobile" data-target="users" class="nav-btn flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 transition hidden">
+        <i data-lucide="users" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium">Pengguna</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- TRANSACTION DIALOG MODAL -->
+  <dialog id="transaction-modal" class="backdrop:bg-slate-900/60 backdrop:backdrop-blur-sm bg-transparent w-full max-w-md p-4 outline-none">
+    <div class="glassmorphism p-6 rounded-3xl shadow-2xl relative w-full overflow-hidden text-slate-800 dark:text-white">
+      <div class="flex items-center justify-between mb-6">
+        <h3 id="modal-title" class="text-lg font-bold text-slate-900 dark:text-white">Tambah Transaksi</h3>
+        <button id="close-modal-btn" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-darkbg-700 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="transaction-form" class="space-y-4">
+        <input type="hidden" id="tx-id">
+        
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Tanggal</label>
+          <input type="date" id="tx-date" required class="w-full bg-white/50 dark:bg-darkbg-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-sm outline-none text-slate-800 dark:text-white focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Tipe</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex items-center gap-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-darkbg-700/20 select-none">
+              <input type="radio" name="tx-type" value="pemasukan" checked class="text-brand-600 focus:ring-brand-500">
+              <span class="text-sm font-semibold text-emerald-500">Pemasukan</span>
+            </label>
+            <label class="border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex items-center gap-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-darkbg-700/20 select-none">
+              <input type="radio" name="tx-type" value="pengeluaran" class="text-brand-600 focus:ring-brand-500">
+              <span class="text-sm font-semibold text-rose-500">Pengeluaran</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Kategori</label>
+          <input type="text" id="tx-category" required list="categories-list" class="w-full bg-white/50 dark:bg-darkbg-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-sm outline-none text-slate-800 dark:text-white focus:ring-2 focus:ring-brand-500" placeholder="Contoh: Iuran Bulanan, Konsumsi, Transport, Alat Musik">
+          <datalist id="categories-list">
+            <option value="Iuran Bulanan">
+            <option value="Donasi">
+            <option value="Uang Jasa">
+            <option value="Konsumsi">
+            <option value="Transportasi">
+            <option value="Alat & Perlengkapan">
+            <option value="Lain-lain">
+          </datalist>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Jumlah (Rupiah)</label>
+          <input type="number" id="tx-amount" required min="1" class="w-full bg-white/50 dark:bg-darkbg-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-sm outline-none text-slate-800 dark:text-white focus:ring-2 focus:ring-brand-500" placeholder="0">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Deskripsi</label>
+          <textarea id="tx-desc" required rows="3" class="w-full bg-white/50 dark:bg-darkbg-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-sm outline-none text-slate-800 dark:text-white focus:ring-2 focus:ring-brand-500" placeholder="Keterangan transaksi..."></textarea>
+        </div>
+
+        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-3.5 px-4 rounded-xl transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-brand-600/10 active:scale-[0.98]">
+          <i data-lucide="check" class="w-5 h-5"></i>
+          <span>Simpan Transaksi</span>
+        </button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Main Application Module -->
+  <script type="module" src="./src/app.js"></script>
+
+  <!-- Service Worker Register -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('Service Worker Registered successfully', reg.scope))
+          .catch((err) => console.log('Service Worker registration failed', err));
+      });
+    }
+  </script>
+</body>
+</html>
