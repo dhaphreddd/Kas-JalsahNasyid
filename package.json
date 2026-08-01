@@ -1,0 +1,15 @@
+{
+  "name": "kas-jalsah-nasyid",
+  "version": "1.0.0",
+  "description": "Aplikasi Manajemen Kas Jalsah & Nasyid",
+  "scripts": {
+    "dev": "npx serve ./"
+  },
+  "keywords": [
+    "pwa",
+    "firebase",
+    "kas"
+  ],
+  "author": "",
+  "license": "ISC"
+}
