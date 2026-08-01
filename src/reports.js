@@ -105,7 +105,7 @@ export function initReportsListeners(getTransactions) {
     
     return transactions.filter(t => {
       return t.date >= start && t.date <= end;
-    }).sort((a, b) => a.date.localeCompare(b.date));
+    }).sort((a, b) => new Date(a.date) - new Date(b.date));
   };
 
   // PDF Export
